@@ -6,6 +6,13 @@
 
 -module(ejwt).
 
+-define(OLD_CRYPTO_API, true).
+-ifdef(OTP_RELEASE).
+	-if(?OTP_RELEASE >= 23).
+		-undef(OLD_CRYPTO_API).
+	-endif.
+ -endif.
+
 -define(HS256, <<"HS256">>).
 -define(HS384, <<"HS384">>).
 -define(HS512, <<"HS512">>).
@@ -37,12 +44,21 @@ encode(Payload, Key, Algorithm) ->
 
 -spec get_mac(Key :: key(), Data :: binary(), Method :: binary()) -> binary().
 
+-ifdef(OLD_CRYPTO_API).
 get_mac(Key, Data, ?HS256) ->
     crypto:hmac(sha256, Key, Data);
 get_mac(Key, Data, ?HS384) ->
     crypto:hmac(sha384, Key, Data);
 get_mac(Key, Data, ?HS512) ->
     crypto:hmac(sha512, Key, Data).
+-else.
+get_mac(Key, Data, ?HS256) ->
+    crypto:mac(hmac, sha256, Key, Data);
+get_mac(Key, Data, ?HS384) ->
+    crypto:mac(hmac, sha384, Key, Data);
+get_mac(Key, Data, ?HS512) ->
+    crypto:mac(hmac, sha512, Key, Data).
+-endif.
 
 -spec decode(JWT :: binary()) -> list() | error.
 
